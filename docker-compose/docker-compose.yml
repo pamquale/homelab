@@ -1,0 +1,39 @@
+services:
+  web:
+    build: ./web
+    ports:
+      - "8080:80"
+    environment:
+      DB_HOST: db
+      DB_USER: webuser
+      DB_PASS: changeme
+      DB_NAME: homelab
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - homelab
+
+  db:
+    image: percona:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: homelab
+      MYSQL_USER: webuser
+      MYSQL_PASSWORD: changeme
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - homelab
+
+networks:
+  homelab:
+
+volumes:
+  db_data:
